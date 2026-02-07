@@ -94,6 +94,74 @@
         }
 
         /* 协议展示区 */
+        .user-info-form {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .user-info-form h3 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .info-field label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .info-field input,
+        .info-field select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+            outline: none;
+            background: var(--bg);
+        }
+
+        .info-field input:focus,
+        .info-field select:focus {
+            border-color: var(--accent);
+        }
+
+        .info-bmi {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+
+        .info-bmi .value {
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: var(--accent);
+        }
+
+        .info-bmi .label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* 协议展示区 */
         .protocols-intro {
             background: var(--card);
             border-radius: 20px;
@@ -649,6 +717,32 @@
                 <p>无需意志力对抗，用习惯自然改变。</p>
             </div>
 
+            <div class="user-info-form fade-in" id="userInfoForm">
+                <h3>请先填写个人信息（用于生成科学建议）</h3>
+                <div class="info-row">
+                    <div class="info-field">
+                        <label>身高 (cm)</label>
+                        <input type="number" id="heightInput" placeholder="例如：170">
+                    </div>
+                    <div class="info-field">
+                        <label>性别</label>
+                        <select id="genderInput">
+                            <option value="">请选择</option>
+                            <option value="male">男</option>
+                            <option value="female">女</option>
+                        </select>
+                    </div>
+                    <div class="info-field">
+                        <label>年龄</label>
+                        <input type="number" id="ageInput" placeholder="例如：30">
+                    </div>
+                </div>
+                <div class="info-bmi" id="bmiDisplay" style="display: none;">
+                    <div class="value" id="bmiValue">--</div>
+                    <div class="label">BMI 体质指数</div>
+                </div>
+            </div>
+
             <div class="protocols-intro fade-in">
                 <h2>本次实验包含以下8项协议</h2>
                 <div class="protocols-list">
@@ -766,7 +860,7 @@
             <div class="conclusion-card fade-in">
                 <div class="conclusion-header">
                     <h2>28天实验报告</h2>
-                    <p>体重管理健康实验室</p>
+                    <p id="userInfoDisplay">体重管理健康实验室</p>
                 </div>
 
                 <div class="stats-overview">
@@ -785,6 +879,25 @@
                     <div class="stat-item">
                         <div class="stat-value" id="avgRate">--</div>
                         <div class="stat-label">平均完成率</div>
+                    </div>
+                </div>
+
+                <div class="stats-overview" style="margin-bottom: 0;">
+                    <div class="stat-item">
+                        <div class="stat-value" id="userBMI">--</div>
+                        <div class="stat-label">BMI 指数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="bmrValue">--</div>
+                        <div class="stat-label">基础代谢(kcal)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="avgHunger">--</div>
+                        <div class="stat-label">平均饥饿感</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="avgUrge">--</div>
+                        <div class="stat-label">平均暴食冲动</div>
                     </div>
                 </div>
 
@@ -818,6 +931,7 @@
         const PROTOCOLS = ['含糖饮料清零', '晚饭后不吃零食', '每日步数≥8000', '蛋白质早餐', '晚饭提前', '盘子法', '酒精限制', '零食替换'];
 
         let state = {
+            userInfo: null,
             experiment: null
         };
 
@@ -826,6 +940,13 @@
             const saved = localStorage.getItem('weightLabState2');
             if (saved) {
                 state = JSON.parse(saved);
+                // 恢复用户信息显示
+                if (state.userInfo) {
+                    document.getElementById('heightInput').value = state.userInfo.height || '';
+                    document.getElementById('genderInput').value = state.userInfo.gender || '';
+                    document.getElementById('ageInput').value = state.userInfo.age || '';
+                    updateBMIDisplay();
+                }
                 if (state.experiment) {
                     showLabPage();
                     renderDays();
@@ -841,10 +962,69 @@
             localStorage.setItem('weightLabState2', JSON.stringify(state));
         }
 
+        // 计算BMI
+        function calculateBMI(weight, height) {
+            if (!weight || !height) return null;
+            const h = height / 100;
+            return (weight / (h * h)).toFixed(1);
+        }
+
+        // BMI分类
+        function getBMICategory(bmi) {
+            if (bmi < 18.5) return { label: '偏瘦', color: '#74b9ff' };
+            if (bmi < 24) return { label: '正常', color: '#00b894' };
+            if (bmi < 28) return { label: '偏胖', color: '#fdcb6e' };
+            return { label: '肥胖', color: '#e17055' };
+        }
+
+        // 计算基础代谢率 (Mifflin-St Jeor公式)
+        function calculateBMR(weight, height, age, gender) {
+            if (!weight || !height || !age || !gender) return null;
+            if (gender === 'male') {
+                return Math.round(10 * weight + 6.25 * height - 5 * age + 5);
+            } else {
+                return Math.round(10 * weight + 6.25 * height - 5 * age - 161);
+            }
+        }
+
+        // 更新BMI显示
+        function updateBMIDisplay() {
+            const height = parseFloat(document.getElementById('heightInput').value);
+            const weight = parseFloat(document.getElementById('weightInput').value) ||
+                          (state.experiment && state.experiment.days[0] ? state.experiment.days[0].weight : null);
+
+            if (height) {
+                document.getElementById('bmiDisplay').style.display = 'block';
+                // 使用第一天的体重计算BMI
+                if (state.experiment && state.experiment.days[0] && state.experiment.days[0].weight) {
+                    const bmi = calculateBMI(state.experiment.days[0].weight, height);
+                    if (bmi) {
+                        const cat = getBMICategory(bmi);
+                        document.getElementById('bmiValue').textContent = bmi;
+                        document.getElementById('bmiValue').style.color = cat.color;
+                    }
+                }
+            }
+        }
+
         // 开始实验
         function startExperiment() {
+            const height = parseFloat(document.getElementById('heightInput').value);
+            const gender = document.getElementById('genderInput').value;
+            const age = parseInt(document.getElementById('ageInput').value);
+
+            if (!height || !gender || !age) {
+                alert('请填写完整的个人信息');
+                return;
+            }
+
+            // 保存用户信息
+            state.userInfo = { height, gender, age };
+            saveState();
+
             state.experiment = {
                 startDate: new Date().toISOString(),
+                userInfo: { height, gender, age },
                 days: Array(TOTAL_DAYS).fill(null).map((_, i) => ({
                     day: i + 1,
                     weight: null,
@@ -993,7 +1173,15 @@
             document.getElementById('conclusionPage').classList.add('active');
 
             const exp = state.experiment;
+            const userInfo = exp.userInfo || state.userInfo;
             const days = exp.days;
+
+            // 显示用户信息
+            if (userInfo) {
+                const genderText = userInfo.gender === 'male' ? '男' : '女';
+                document.getElementById('userInfoDisplay').textContent =
+                    `${userInfo.height}cm | ${genderText} | ${userInfo.age}岁`;
+            }
 
             // 计算统计数据
             const startWeight = days[0].weight;
@@ -1062,26 +1250,76 @@
             document.getElementById('conclusionText').textContent = conclusionText;
 
             // 生成建议
-            let suggestionText = '';
-            if (best.rate >= 80 && worst.rate <= 50) {
-                suggestionText = `你擅长坚持"${best.name}"，但"${worst.name}"完成度较低。建议从小步骤开始，比如每周选择2天重点攻克弱项，逐步提高。`;
-            } else if (avgRate >= 70) {
-                suggestionText = `整体完成度不错！建议保持当前节奏，并尝试将完成率较低的1-2个协议作为下个阶段的重点突破目标。`;
-            } else {
-                suggestionText = `建议降低目标复杂度。28天里专注于2-3个最易坚持的协议，形成习惯后再逐步添加其他项目。质量比数量更重要。`;
+            let suggestions = [];
+
+            // 1. 基于BMI的建议
+            if (userInfo && startWeight) {
+                const bmi = calculateBMI(startWeight, userInfo.height);
+                if (bmi) {
+                    const bmiCat = getBMICategory(bmi);
+                    if (bmiCat.label === '偏瘦') {
+                        suggestions.push(`【增重建议】您的BMI为${bmi}，处于偏瘦范围。建议增加优质蛋白摄入（鸡胸肉、鱼虾、蛋奶），配合力量训练促进肌肉合成。`);
+                    } else if (bmiCat.label === '肥胖') {
+                        suggestions.push(`【减重建议】您的BMI为${bmi}，处于肥胖范围。建议将每日热量控制在基础代谢率以下300-500kcal，同时保持足够蛋白质摄入保护肌肉。`);
+                    }
+                }
             }
-            document.getElementById('suggestionText').textContent = suggestionText;
+
+            // 2. 基于基础代谢率的饮食建议
+            if (userInfo && startWeight) {
+                const bmr = calculateBMR(startWeight, userInfo.height, userInfo.age, userInfo.gender);
+                if (bmr) {
+                    const maintainWeight = Math.round(bmr * 1.2 * 1.1);
+                    suggestions.push(`【热量参考】您的每日基础代谢率约${bmr}kcal。维持当前体重每日约需${maintainWeight}kcal，减重建议控制在${maintainWeight - 300}至${maintainWeight - 500}kcal。`);
+                }
+            }
+
+            // 3. 基于饥饿感的建议
+            if (avgHunger !== '--' && parseFloat(avgHunger) >= 3.5) {
+                suggestions.push(`【控制饥饿】实验期间平均饥饿感${avgHunger}分较高。建议增加膳食纤维摄入（蔬菜、粗粮），蛋白质食物放在餐前吃，可有效延长饱腹感。`);
+            }
+
+            // 4. 基于暴食冲动的建议
+            if (avgUrge !== 'NaN' && avgUrge !== '--' && parseFloat(avgUrge) >= 3.5) {
+                suggestions.push(`【情绪饮食】暴食冲动评分${avgUrge}分说明可能存在情绪性进食。建议记录进食日记，识别触发因素，尝试用散步、冥想等方式替代进食来缓解压力。`);
+            }
+
+            // 5. 基于协议完成情况的建议
+            const top3 = sorted.slice(0, 3).map(p => p.name).join('、');
+            const bottom3 = sorted.slice(-3).map(p => p.name).join('、');
+
+            if (sorted[0].rate >= 70) {
+                suggestions.push(`【优势发挥】您在${top3}方面执行较好，这些已成为您的优势习惯。下阶段可将这些作为「锚点习惯」，带动其他习惯的建立。`);
+            }
+            if (sorted[sorted.length - 1].rate <= 30) {
+                suggestions.push(`【改进重点】${bottom3}完成度较低。建议降低难度或选择替代方案逐步过渡，如「酒精限制」可先从「减少50%」开始。`);
+            }
+
+            // 6. 通用运动建议
+            suggestions.push(`【运动建议】每日8000步是最低标准，有条件可增加到10000-12000步。若想进一步改善体脂率，建议每周3次、每次30分钟以上的中等强度有氧运动。`);
+
+            // 7. 睡眠建议
+            suggestions.push(`【睡眠建议】睡眠不足7小时会升高饥饿素、增加食欲。建议保持7-9小时睡眠，睡前一小时避免进食，可显著改善体重管理效果。`);
+
+            document.getElementById('suggestionText').innerHTML = suggestions.map(s =>
+                `<p style="margin-bottom: 12px;">${s}</p>`
+            ).join('');
         }
 
         // 重新开始
         function restartExperiment() {
             state.experiment = null;
+            state.userInfo = null;
             saveState();
             document.getElementById('conclusionPage').classList.remove('active');
             document.getElementById('labPage').classList.remove('active');
             document.getElementById('homePage').classList.remove('hidden');
             document.getElementById('homePage').classList.add('fade-in');
             document.getElementById('recordForm').classList.remove('hidden');
+            document.getElementById('heightInput').value = '';
+            document.getElementById('genderInput').value = '';
+            document.getElementById('ageInput').value = '';
+            document.getElementById('bmiDisplay').style.display = 'none';
         }
 
         // 返回实验
