@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体重管理健康实验室</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2d3436;
+            --secondary: #636e72;
+            --accent: #00b894;
+            --accent-light: #55efc4;
+            --bg: #fafafa;
+            --card: #ffffff;
+            --text: #2d3436;
+            --text-light: #636e72;
+            --border: #dfe6e9;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        /* 头部 */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        header p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        /* 协议展示区 */
+        .protocols-intro {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+
+        .protocols-intro h2 {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .protocols-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .protocol-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .protocol-item .num {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        /* 开始按钮 */
+        .start-btn {
+            display: block;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto 50px;
+            padding: 14px 36px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
+        }
+
+        /* 实验页面 */
+        .lab-page {
+            display: none;
+        }
+
+        .lab-page.active {
+            display: block;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 24px;
+            transition: color 0.3s;
+        }
+
+        .back-btn:hover {
+            color: var(--primary);
+        }
+
+        .lab-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .lab-header h2 {
+            font-size: 1.3rem;
+            font-weight: 400;
+            margin-bottom: 6px;
+        }
+
+        .lab-header p {
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            background: var(--border);
+            height: 6px;
+            border-radius: 3px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* 日历网格 */
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .day-item {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .day-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .day-item.completed {
+            border: 2px solid var(--accent);
+        }
+
+        .day-item.current {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
+        }
+
+        .day-number {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        .day-item.current .day-number {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .day-weight {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .day-rate {
+            font-size: 0.65rem;
+            margin-top: 4px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            display: inline-block;
+            background: rgba(0, 184, 148, 0.1);
+            color: var(--accent);
+        }
+
+        .day-item.current .day-rate {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* 记录表单 */
+        .record-form {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .form-title {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group > label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 10px;
+        }
+
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            outline: none;
+        }
+
+        .form-group input[type="number"]:focus {
+            border-color: var(--accent);
+        }
+
+        /* 滑块 */
+        .slider-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 184, 148, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        /* 协议复选框 */
+        .checklist-group {
+            margin-bottom: 20px;
+        }
+
+        .checklist-group > label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+
+        .checklist {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: var(--bg);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+        }
+
+        .check-item:hover {
+            background: rgba(0, 184, 148, 0.1);
+        }
+
+        .check-item input {
+            display: none;
+        }
+
+        .check-box {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .check-box::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 3px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .check-item input:checked + .check-box {
+            border-color: var(--accent);
+            background: rgba(0, 184, 148, 0.1);
+        }
+
+        .check-item input:checked + .check-box::after {
+            opacity: 1;
+        }
+
+        .check-item input:checked ~ span {
+            color: var(--accent);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
+        }
+
+        /* 结论页面 */
+        .conclusion-page {
+            display: none;
+        }
+
+        .conclusion-page.active {
+            display: block;
+        }
+
+        .conclusion-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .conclusion-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .conclusion-header h2 {
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-bottom: 6px;
+        }
+
+        .conclusion-header p {
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        /* 统计数据 */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 16px 12px;
+            background: var(--bg);
+            border-radius: 12px;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        /* 协议完成率 */
+        .protocol-rates {
+            margin-bottom: 24px;
+        }
+
+        .protocol-rates h3 {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 14px;
+        }
+
+        .rate-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .rate-name {
+            width: 100px;
+            font-size: 0.85rem;
+            color: var(--text);
+            flex-shrink: 0;
+        }
+
+        .rate-bar-bg {
+            flex: 1;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .rate-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .rate-value {
+            width: 40px;
+            text-align: right;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--accent);
+        }
+
+        /* 结论文本 */
+        .conclusion-text {
+            background: linear-gradient(135deg, rgba(0, 184, 148, 0.08), rgba(85, 239, 196, 0.08));
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .conclusion-text h3 {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+        }
+
+        .conclusion-text p {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: var(--primary);
+        }
+
+        .restart-btn {
+            display: block;
+            width: 100%;
+            max-width: 280px;
+            margin: 24px auto 0;
+            padding: 14px 36px;
+            background: var(--card);
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .restart-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .protocols-list {
+                grid-template-columns: 1fr;
+            }
+
+            .days-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .stats-overview {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .checklist {
+                grid-template-columns: 1fr;
+            }
+
+            .rate-bar-item {
+                flex-wrap: wrap;
+            }
+
+            .rate-name {
+                width: 80px;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 首页 -->
+        <div id="homePage" class="fade-in">
+            <header>
+                <h1>体重管理健康实验室</h1>
+                <p>28天实验周期 · 8个健康协议 · 寻找最适合你的方式</p>
+            </header>
+
+            <div class="protocols-intro fade-in">
+                <h2>本次实验包含以下8项协议</h2>
+                <div class="protocols-list">
+                    <div class="protocol-item"><span class="num">1</span>含糖饮料清零</div>
+                    <div class="protocol-item"><span class="num">2</span>晚饭后不吃零食</div>
+                    <div class="protocol-item"><span class="num">3</span>每日步数≥8000</div>
+                    <div class="protocol-item"><span class="num">4</span>蛋白质早餐</div>
+                    <div class="protocol-item"><span class="num">5</span>晚饭提前</div>
+                    <div class="protocol-item"><span class="num">6</span>盘子法</div>
+                    <div class="protocol-item"><span class="num">7</span>酒精限制</div>
+                    <div class="protocol-item"><span class="num">8</span>零食替换</div>
+                </div>
+            </div>
+
+            <button class="start-btn" id="startBtn">开始28天实验</button>
+        </div>
+
+        <!-- 实验页面 -->
+        <div id="labPage" class="lab-page">
+            <button class="back-btn" id="backBtn">
+                <span>←</span> 返回
+            </button>
+
+            <div class="lab-header fade-in">
+                <h2>第 <span id="currentDay">1</span> 天</h2>
+                <p>完成天数 <span id="completedCount">0</span> / 28</p>
+            </div>
+
+            <div class="progress-bar fade-in">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+
+            <div class="days-grid fade-in" id="daysGrid"></div>
+
+            <div class="record-form fade-in" id="recordForm">
+                <div class="form-group">
+                    <label>晨起体重 (kg)</label>
+                    <input type="number" id="weightInput" step="0.1" placeholder="例如：65.5">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>饥饿感</span>
+                        <span id="hungerValue">3</span>
+                    </div>
+                    <input type="range" class="slider" id="hungerSlider" min="1" max="5" value="3">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>暴食冲动</span>
+                        <span id="urgeValue">3</span>
+                    </div>
+                    <input type="range" class="slider" id="urgeSlider" min="1" max="5" value="3">
+                </div>
+
+                <div class="checklist-group">
+                    <label>今日完成以下协议（可多选）</label>
+                    <div class="checklist">
+                        <label class="check-item">
+                            <input type="checkbox" name="p1" value="1">
+                            <span class="check-box"></span>
+                            <span>含糖饮料清零</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="p2" value="2">
+                            <span class="check-box"></span>
+                            <span>晚饭后不吃零食</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="p3" value="3">
+                            <span class="check-box"></span>
+                            <span>每日步数≥8000</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="p4" value="4">
+                            <span class="check-box"></span>
+                            <span>蛋白质早餐</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="p5" value="5">
+                            <span class="check-box"></span>
+                            <span>晚饭提前</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="p6" value="6">
+                            <span class="check-box"></span>
+                            <span>盘子法</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="p7" value="7">
+                            <span class="check-box"></span>
+                            <span>酒精限制</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="p8" value="8">
+                            <span class="check-box"></span>
+                            <span>零食替换</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button class="submit-btn" id="submitBtn">保存记录</button>
+            </div>
+
+            <button class="submit-btn hidden" id="viewConclusionBtn" style="margin-top: 16px;">查看结论</button>
+        </div>
+
+        <!-- 结论页面 -->
+        <div id="conclusionPage" class="conclusion-page">
+            <button class="back-btn" id="backFromConclusion">
+                <span>←</span> 返回实验
+            </button>
+
+            <div class="conclusion-card fade-in">
+                <div class="conclusion-header">
+                    <h2>28天实验报告</h2>
+                    <p>体重管理健康实验室</p>
+                </div>
+
+                <div class="stats-overview">
+                    <div class="stat-item">
+                        <div class="stat-value" id="startWeight">--</div>
+                        <div class="stat-label">起始体重</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="endWeight">--</div>
+                        <div class="stat-label">结束体重</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="weightChange">--</div>
+                        <div class="stat-label">体重变化</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="avgRate">--</div>
+                        <div class="stat-label">平均完成率</div>
+                    </div>
+                </div>
+
+                <div class="protocol-rates">
+                    <h3>各协议完成率</h3>
+                    <div id="protocolRates"></div>
+                </div>
+
+                <div class="conclusion-text">
+                    <h3>数据分析</h3>
+                    <p id="analysisText">正在分析...</p>
+                </div>
+
+                <div class="conclusion-text">
+                    <h3>结论</h3>
+                    <p id="conclusionText">正在生成...</p>
+                </div>
+
+                <div class="conclusion-text">
+                    <h3>建议</h3>
+                    <p id="suggestionText">正在生成...</p>
+                </div>
+            </div>
+
+            <button class="restart-btn" id="restartBtn">重新开始实验</button>
+        </div>
+    </div>
+
+    <script>
+        const TOTAL_DAYS = 28;
+        const PROTOCOLS = ['含糖饮料清零', '晚饭后不吃零食', '每日步数≥8000', '蛋白质早餐', '晚饭提前', '盘子法', '酒精限制', '零食替换'];
+
+        let state = {
+            experiment: null
+        };
+
+        // 从localStorage加载状态
+        function loadState() {
+            const saved = localStorage.getItem('weightLabState2');
+            if (saved) {
+                state = JSON.parse(saved);
+                if (state.experiment) {
+                    showLabPage();
+                    renderDays();
+                    if (state.experiment.completed) {
+                        showConclusion();
+                    }
+                }
+            }
+        }
+
+        // 保存状态
+        function saveState() {
+            localStorage.setItem('weightLabState2', JSON.stringify(state));
+        }
+
+        // 开始实验
+        function startExperiment() {
+            state.experiment = {
+                startDate: new Date().toISOString(),
+                days: Array(TOTAL_DAYS).fill(null).map((_, i) => ({
+                    day: i + 1,
+                    weight: null,
+                    hunger: null,
+                    urge: null,
+                    protocols: []
+                })),
+                currentDay: 1,
+                completed: false
+            };
+            saveState();
+            showLabPage();
+            renderDays();
+        }
+
+        // 显示实验页面
+        function showLabPage() {
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('conclusionPage').classList.remove('active');
+            document.getElementById('labPage').classList.add('active');
+            renderDays();
+        }
+
+        // 渲染日历
+        function renderDays() {
+            const grid = document.getElementById('daysGrid');
+            grid.innerHTML = state.experiment.days.map((day, i) => {
+                const isCurrent = i + 1 === state.experiment.currentDay;
+                const isCompleted = day.weight !== null;
+                const rate = day.protocols.length > 0 ? Math.round((day.protocols.length / 8) * 100) : null;
+                return `
+                    <div class="day-item ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}" data-day="${i + 1}">
+                        <div class="day-number">D${i + 1}</div>
+                        <div class="day-weight">${day.weight ? day.weight : '--'}</div>
+                        ${rate !== null ? `<div class="day-rate">${rate}%</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            // 绑定点击事件
+            grid.querySelectorAll('.day-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const day = parseInt(item.dataset.day);
+                    if (day <= state.experiment.currentDay) {
+                        showDayRecord(day);
+                    }
+                });
+            });
+
+            // 更新进度
+            const progress = (state.experiment.currentDay / TOTAL_DAYS) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('currentDay').textContent = state.experiment.currentDay;
+            document.getElementById('completedCount').textContent = state.experiment.days.filter(d => d.weight !== null).length;
+
+            // 检查是否可以查看结论
+            const allRecorded = state.experiment.days.every(d => d.weight !== null);
+            const submitBtn = document.getElementById('submitBtn');
+            const viewBtn = document.getElementById('viewConclusionBtn');
+
+            if (allRecorded && !state.experiment.completed) {
+                submitBtn.classList.add('hidden');
+                viewBtn.classList.remove('hidden');
+            } else if (!state.experiment.completed) {
+                submitBtn.classList.remove('hidden');
+                viewBtn.classList.add('hidden');
+            }
+
+            if (state.experiment.completed) {
+                document.getElementById('recordForm').classList.add('hidden');
+            }
+        }
+
+        // 显示某天记录
+        function showDayRecord(day) {
+            const dayData = state.experiment.days[day - 1];
+            document.getElementById('currentDay').textContent = day;
+            document.getElementById('weightInput').value = dayData.weight || '';
+            document.getElementById('hungerSlider').value = dayData.hunger || 3;
+            document.getElementById('hungerValue').textContent = dayData.hunger || 3;
+            document.getElementById('urgeSlider').value = dayData.urge || 3;
+            document.getElementById('urgeValue').textContent = dayData.urge || 3;
+
+            // 重置复选框
+            document.querySelectorAll('.checklist input').forEach(cb => {
+                cb.checked = dayData.protocols.includes(parseInt(cb.value));
+            });
+
+            document.getElementById('viewConclusionBtn').classList.add('hidden');
+        }
+
+        // 提交记录
+        function submitRecord() {
+            const day = state.experiment.currentDay;
+            const weight = parseFloat(document.getElementById('weightInput').value);
+            const hunger = parseInt(document.getElementById('hungerSlider').value);
+            const urge = parseInt(document.getElementById('urgeSlider').value);
+
+            // 获取选中的协议
+            const protocols = [];
+            document.querySelectorAll('.checklist input:checked').forEach(cb => {
+                protocols.push(parseInt(cb.value));
+            });
+
+            if (!weight) {
+                alert('请填写体重');
+                return;
+            }
+
+            state.experiment.days[day - 1] = {
+                day,
+                weight,
+                hunger,
+                urge,
+                protocols
+            };
+
+            if (day < TOTAL_DAYS) {
+                state.experiment.currentDay++;
+            }
+
+            saveState();
+            renderDays();
+
+            // 清空表单
+            document.getElementById('weightInput').value = '';
+            document.getElementById('hungerSlider').value = 3;
+            document.getElementById('hungerValue').textContent = '3';
+            document.getElementById('urgeSlider').value = 3;
+            document.getElementById('urgeValue').textContent = '3';
+            document.querySelectorAll('.checklist input').forEach(cb => cb.checked = false);
+
+            if (state.experiment.currentDay <= TOTAL_DAYS) {
+                showDayRecord(state.experiment.currentDay);
+            }
+        }
+
+        // 查看结论
+        function viewConclusion() {
+            showConclusion();
+        }
+
+        // 显示结论
+        function showConclusion() {
+            document.getElementById('labPage').classList.remove('active');
+            document.getElementById('conclusionPage').classList.add('active');
+
+            const exp = state.experiment;
+            const days = exp.days;
+
+            // 计算统计数据
+            const startWeight = days[0].weight;
+            const endWeight = days[TOTAL_DAYS - 1].weight;
+            const weightDiff = endWeight - startWeight;
+
+            document.getElementById('startWeight').textContent = startWeight ? startWeight + 'kg' : '--';
+            document.getElementById('endWeight').textContent = endWeight ? endWeight + 'kg' : '--';
+            document.getElementById('weightChange').textContent = startWeight && endWeight ? (weightDiff > 0 ? '+' : '') + weightDiff.toFixed(1) + 'kg' : '--';
+
+            // 计算每个协议的完成率
+            const protocolRates = PROTOCOLS.map((name, idx) => {
+                const completed = days.filter(d => d.protocols.includes(idx + 1)).length;
+                return { name, rate: Math.round((completed / TOTAL_DAYS) * 100), count: completed };
+            });
+
+            const avgRate = Math.round(protocolRates.reduce((s, p) => s + p.rate, 0) / 8);
+            document.getElementById('avgRate').textContent = avgRate + '%';
+
+            // 渲染协议完成率
+            const ratesHtml = protocolRates
+                .sort((a, b) => b.rate - a.rate)
+                .map(p => `
+                    <div class="rate-bar-item">
+                        <span class="rate-name">${p.name}</span>
+                        <div class="rate-bar-bg">
+                            <div class="rate-bar-fill" style="width: ${p.rate}%"></div>
+                        </div>
+                        <span class="rate-value">${p.rate}%</span>
+                    </div>
+                `).join('');
+            document.getElementById('protocolRates').innerHTML = ratesHtml;
+
+            // 找出完成率最高和最低的协议
+            const sorted = [...protocolRates].sort((a, b) => b.rate - a.rate);
+            const best = sorted[0];
+            const worst = sorted[7];
+
+            // 体重趋势分析
+            let analysisText = '';
+            if (startWeight && endWeight) {
+                if (weightDiff < -0.5) {
+                    analysisText = `28天内体重从 ${startWeight}kg 下降至 ${endWeight}kg，减重 ${Math.abs(weightDiff).toFixed(1)}kg。`;
+                } else if (weightDiff > 0.5) {
+                    analysisText = `28天内体重从 ${startWeight}kg 上升至 ${endWeight}kg，增重 ${weightDiff.toFixed(1)}kg。`;
+                } else {
+                    analysisText = `28天内体重基本持平，从 ${startWeight}kg 到 ${endWeight}kg，波动仅 ${Math.abs(weightDiff).toFixed(1)}kg。`;
+                }
+                analysisText += ` 平均每日完成 ${avgRate}% 的协议要求。完成最好的协议是"${best.name}"（${best.rate}%），最需加强的是"${worst.name}"（${worst.rate}%）。`;
+            } else {
+                analysisText = '实验数据不完整，无法进行完整的体重趋势分析。';
+            }
+            document.getElementById('analysisText').textContent = analysisText;
+
+            // 生成结论
+            let conclusionText = '';
+            if (avgRate >= 80) {
+                conclusionText = `你在28天实验中的平均协议完成率达到${avgRate}%，表现非常出色！你已经建立了相当稳定的健康饮食习惯。`;
+            } else if (avgRate >= 60) {
+                conclusionText = `平均完成率${avgRate}%说明你有良好的健康意识，但仍有提升空间。坚持就是胜利！`;
+            } else if (avgRate >= 40) {
+                conclusionText = `平均完成率${avgRate}%是一个不错的开始。健康习惯需要时间培养，不要气馁。`;
+            } else {
+                conclusionText = `当前完成率${avgRate}%较低，这很正常——改变习惯本身就是困难的。重要的是你已经开始了。`;
+            }
+            document.getElementById('conclusionText').textContent = conclusionText;
+
+            // 生成建议
+            let suggestionText = '';
+            if (best.rate >= 80 && worst.rate <= 50) {
+                suggestionText = `你擅长坚持"${best.name}"，但"${worst.name}"完成度较低。建议从小步骤开始，比如每周选择2天重点攻克弱项，逐步提高。`;
+            } else if (avgRate >= 70) {
+                suggestionText = `整体完成度不错！建议保持当前节奏，并尝试将完成率较低的1-2个协议作为下个阶段的重点突破目标。`;
+            } else {
+                suggestionText = `建议降低目标复杂度。28天里专注于2-3个最易坚持的协议，形成习惯后再逐步添加其他项目。质量比数量更重要。`;
+            }
+            document.getElementById('suggestionText').textContent = suggestionText;
+        }
+
+        // 重新开始
+        function restartExperiment() {
+            state.experiment = null;
+            saveState();
+            document.getElementById('conclusionPage').classList.remove('active');
+            document.getElementById('labPage').classList.remove('active');
+            document.getElementById('homePage').classList.remove('hidden');
+            document.getElementById('homePage').classList.add('fade-in');
+            document.getElementById('recordForm').classList.remove('hidden');
+        }
+
+        // 返回实验
+        function backToLab() {
+            document.getElementById('conclusionPage').classList.remove('active');
+            document.getElementById('labPage').classList.add('active');
+        }
+
+        // 初始化
+        function init() {
+            loadState();
+
+            document.getElementById('startBtn').addEventListener('click', startExperiment);
+            document.getElementById('backBtn').addEventListener('click', () => {
+                if (confirm('返回将保留当前实验进度，确定返回吗？')) {
+                    document.getElementById('labPage').classList.remove('active');
+                    document.getElementById('homePage').classList.remove('hidden');
+                }
+            });
+            document.getElementById('backFromConclusion').addEventListener('click', backToLab);
+            document.getElementById('submitBtn').addEventListener('click', submitRecord);
+            document.getElementById('viewConclusionBtn').addEventListener('click', viewConclusion);
+            document.getElementById('restartBtn').addEventListener('click', restartExperiment);
+
+            // 滑块事件
+            document.getElementById('hungerSlider').addEventListener('input', (e) => {
+                document.getElementById('hungerValue').textContent = e.target.value;
+            });
+            document.getElementById('urgeSlider').addEventListener('input', (e) => {
+                document.getElementById('urgeValue').textContent = e.target.value;
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
