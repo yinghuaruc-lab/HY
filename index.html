@@ -68,6 +68,31 @@
             font-size: 0.95rem;
         }
 
+        /* 产品说明 */
+        .intro-section {
+            background: linear-gradient(135deg, rgba(0, 184, 148, 0.08), rgba(85, 239, 196, 0.08));
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .intro-section p {
+            color: var(--text);
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .intro-section p:last-child {
+            margin-bottom: 0;
+        }
+
+        .intro-highlight {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
         /* 协议展示区 */
         .protocols-intro {
             background: var(--card);
@@ -617,6 +642,12 @@
                 <h1>体重管理健康实验室</h1>
                 <p>28天实验周期 · 8个健康协议 · 寻找最适合你的方式</p>
             </header>
+
+            <div class="intro-section fade-in">
+                <p>用<span class="intro-highlight">28天时间</span>，通过<span class="intro-highlight">8个科学协议</span>，</p>
+                <p>用数据找到适合你的健康生活方式，</p>
+                <p>无需意志力对抗，用习惯自然改变。</p>
+            </div>
 
             <div class="protocols-intro fade-in">
                 <h2>本次实验包含以下8项协议</h2>
